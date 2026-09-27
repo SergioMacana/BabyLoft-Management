@@ -1,8 +1,11 @@
 # Nombre de la aplicación
 
-Reemplace este texto con una descripción de su aplicación. Revise el archivo [HELP.md](HELP.md) donde hay mas información sobre como usar esta plantilla.
+Baby Loft Administracion es una aplicacion movil orientada a la venta de ropa y accesorios para bebés. El sistema permitirá a los clientes explorar el catálogo de productos, seleccionar variantes como talla y color, agregar productos al carrito de compras y completar el proceso de compra sin necesidad de crear una cuenta.
 
-Autor(es): Nombre del estudiante
+El proyecto busca ofrecer una experiencia de compra rápida, intuitiva y confiable, al mismo tiempo que proporciona al administrador herramientas para gestionar productos, inventario, pedidos y ventas desde un panel administrativo.
+
+Autor(es): sergio macana
+           kevin ospina
 
 ## Referencias
 
