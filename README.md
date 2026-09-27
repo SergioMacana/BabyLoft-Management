@@ -1,4 +1,4 @@
-# Nombre de la aplicación
+Babyloft
 
 Baby Loft Administracion es una aplicacion movil orientada a la venta de ropa y accesorios para bebés. El sistema permitirá a los clientes explorar el catálogo de productos, seleccionar variantes como talla y color, agregar productos al carrito de compras y completar el proceso de compra sin necesidad de crear una cuenta.
 
