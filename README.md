@@ -4,8 +4,8 @@ Baby Loft Administracion es una aplicacion movil orientada a la venta de ropa y 
 
 El proyecto busca ofrecer una experiencia de compra rápida, intuitiva y confiable, al mismo tiempo que proporciona al administrador herramientas para gestionar productos, inventario, pedidos y ventas desde un panel administrativo.
 
-Autor(es): sergio macana
-           kevin ospina
+Autor(es): Sergio Macana,
+           Kevin Ospina
 
 ## Referencias
 
