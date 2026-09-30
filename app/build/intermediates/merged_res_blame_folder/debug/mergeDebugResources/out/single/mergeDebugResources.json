@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-debug-51:\\drawable_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-main-53:\\drawable\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-debug-51:\\drawable_ic_launcher.xml.flat",
+        "source": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-main-53:\\drawable\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-debug-51:\\drawable_baby_loft_logo.png.flat",
+        "source": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-main-53:\\drawable\\baby_loft_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-debug-51:\\mipmap_ic_launcher.xml.flat",
+        "source": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-main-53:\\mipmap\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-debug-51:\\drawable_baby_loft_logo.jpeg.flat",
+        "source": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-main-53:\\drawable\\baby_loft_logo.jpeg"
+    },
+    {
+        "merged": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-debug-51:\\mipmap_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\sergi\\.gradle\\daemon\\8.13\\com.babyloft.management.app-main-53:\\mipmap\\ic_launcher_round.xml"
+    }
+]
