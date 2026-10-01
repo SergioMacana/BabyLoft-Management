@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babyloft.management.data.ProductItem
 import com.babyloft.management.data.SampleData
+import com.babyloft.management.ui.components.BabyLoftBottomBar
+import com.babyloft.management.ui.components.BottomBarTab
 import com.babyloft.management.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,29 +45,12 @@ fun ProductCatalogScreen(
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = SurfaceWhite,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio") },
-                    selected = false,
-                    onClick = onNavigateToDashboard
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.ListAlt, contentDescription = "Pedidos") },
-                    label = { Text("Pedidos") },
-                    selected = false,
-                    onClick = onNavigateToOrders
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Catálogo") },
-                    label = { Text("Catálogo", color = PinkPrimary, fontWeight = FontWeight.Bold) },
-                    selected = true,
-                    onClick = {}
-                )
-            }
+            BabyLoftBottomBar(
+                currentTab = BottomBarTab.CATALOGO,
+                onNavigateToDashboard = onNavigateToDashboard,
+                onNavigateToOrders = onNavigateToOrders,
+                onNavigateToCreate = {},
+            )
         },
         containerColor = BackgroundCream
     ) { innerPadding ->

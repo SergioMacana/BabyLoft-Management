@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babyloft.management.data.Order
 import com.babyloft.management.data.OrderStatus
+import com.babyloft.management.ui.components.OrderStatusBadge
 import com.babyloft.management.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
