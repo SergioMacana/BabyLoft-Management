@@ -155,17 +155,12 @@ class MainActivity : ComponentActivity() {
                     // ==========================================
 
                     composable("create") {
-
                         OrderCreateScreen(
-
-                            onBack = {
+                            onNavigateBack = {
                                 navController.popBackStack()
                             },
-
-                            onFinish = {
-
+                            onOrderCreated = {
                                 navController.navigate("orders") {
-
                                     popUpTo("dashboard")
                                 }
                             }
