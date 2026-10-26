@@ -1,8 +1,6 @@
 Babyloft
 
-Baby Loft Administracion es una aplicacion movil orientada a la venta de ropa y accesorios para bebés. El sistema permitirá a los clientes explorar el catálogo de productos, seleccionar variantes como talla y color, agregar productos al carrito de compras y completar el proceso de compra sin necesidad de crear una cuenta.
-
-El proyecto busca ofrecer una experiencia de compra rápida, intuitiva y confiable, al mismo tiempo que proporciona al administrador herramientas para gestionar productos, inventario, pedidos y ventas desde un panel administrativo.
+Baby Loft Management es una aplicación móvil de gestión interna orientada a un negocio de confección y manufactura de prendas para bebé llamado BabyLoft, especialmente para el manejo de pedidos personalizados de ropa y productos para bebés. La aplicación permite administrar el ciclo de vida de cada pedido, desde el registro de la información del cliente y la selección de materiales, telas, colores y especificaciones de personalización, hasta el seguimiento de su estado de producción y entrega. Además, incorpora herramientas para consultar pedidos pendientes, actualizar estados, visualizar métricas de gestión y organizar la información necesaria para facilitar el control de la producción y las ventas desde un dispositivo móvil.
 
 Autor(es): Sergio Macana,
            Kevin Ospina
