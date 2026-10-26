@@ -60,8 +60,9 @@ data class ProductItem(
     val name: String,
     val description: String,
     val price: Double,
-    val imageEmoji: String,
-    val category: String
+    val imageEmoji: String = "👚",
+    val category: String = "General",
+    val imageUri: String? = null
 )
 
 object SampleData {
@@ -139,7 +140,7 @@ object SampleData {
         )
     )
 
-    val products = listOf(
+    val products = mutableStateListOf(
         ProductItem("P1", "Cobija", "Cobija suave 100% algodón pima con bordado personalizado.", 85000.0, "👚", "Cobijas"),
         ProductItem("P2", "Toalla con Capucha", "Toalla de felpa ultra absorbente con capucha bordada.", 55000.0, "🛁", "Baño"),
         ProductItem("P3", "Set Pijama 2 piezas", "Conjunto de pantalón y blusa en interlock suave y antialérgico.", 120000.0, "👕", "Pijamas"),

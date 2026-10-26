@@ -64,6 +64,7 @@ fun AdminDashboardScreen(
                 currentTab = BottomBarTab.INICIO,
                 onNavigateToDashboard = {},
                 onNavigateToOrders = onNavigateToOrders,
+                onNavigateToCatalog = onNavigateToCatalog,
                 onNavigateToCreate = onNavigateToCreate,
             )
         },

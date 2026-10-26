@@ -45,6 +45,7 @@ fun BabyLoftBottomBar(
     currentTab: BottomBarTab,
     onNavigateToDashboard: () -> Unit,
     onNavigateToOrders: () -> Unit,
+    onNavigateToCatalog: () -> Unit,
     onNavigateToCreate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -62,7 +63,7 @@ fun BabyLoftBottomBar(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -75,7 +76,7 @@ fun BabyLoftBottomBar(
                         .clickable { onNavigateToDashboard() }
                         .padding(vertical = 4.dp),
                 ) {
-                    Text("🏠", fontSize = 20.sp)
+                    Text("🏠", fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Inicio",
@@ -106,7 +107,7 @@ fun BabyLoftBottomBar(
                         .clickable { onNavigateToOrders() }
                         .padding(vertical = 4.dp),
                 ) {
-                    Text("📋", fontSize = 20.sp)
+                    Text("📋", fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Pedidos",
@@ -128,17 +129,48 @@ fun BabyLoftBottomBar(
                     }
                 }
 
-                // Tab 3: Nuevo (Floating Button on the right)
+                // Tab 3: Catálogo
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .weight(1f)
-                        .offset(y = (-10).dp),
+                        .clickable { onNavigateToCatalog() }
+                        .padding(vertical = 4.dp),
+                ) {
+                    Text("🛍️", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Catálogo",
+                        color = if (currentTab == BottomBarTab.CATALOGO) PinkPrimary else TextGray,
+                        fontWeight = if (currentTab == BottomBarTab.CATALOGO) FontWeight.Bold else FontWeight.Medium,
+                        fontSize = 11.sp,
+                    )
+                    if (currentTab == BottomBarTab.CATALOGO) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(1.5.dp))
+                                .background(PinkPrimary),
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(5.dp))
+                    }
+                }
+
+                // Tab 4: Nuevo (Floating Button on the right)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .offset(y = (-8).dp),
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(42.dp)
                             .clip(CircleShape)
                             .background(
                                 Brush.linearGradient(
@@ -152,7 +184,7 @@ fun BabyLoftBottomBar(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Nuevo",
                             tint = Color(0xFF2D2D2D),
-                            modifier = Modifier.size(26.dp),
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                     Spacer(modifier = Modifier.height(2.dp))

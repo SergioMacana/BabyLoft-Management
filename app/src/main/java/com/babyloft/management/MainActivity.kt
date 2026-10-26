@@ -130,6 +130,10 @@ class MainActivity : ComponentActivity() {
 
                             onNavigateToOrders = {
                                 navController.navigate("orders")
+                            },
+
+                            onNavigateToCreate = {
+                                navController.navigate("create")
                             }
                         )
                     }

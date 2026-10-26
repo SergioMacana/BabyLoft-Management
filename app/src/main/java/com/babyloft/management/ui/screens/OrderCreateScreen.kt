@@ -321,17 +321,19 @@ private fun Step2ProductsInfo(
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
-    val productsList = listOf(
-        "Cobija",
-        "Toalla con Capucha",
-        "Set Pijama 2 piezas",
-        "Set Pijama 3 piezas",
-        "Dona",
-        "Cojín E",
-        "Salida de baño",
-        "Cobijita Térmica",
-        "Vestido Tejido"
-    )
+    val productsList = SampleData.products.map { it.name }.ifEmpty {
+        listOf(
+            "Cobija",
+            "Toalla con Capucha",
+            "Set Pijama 2 piezas",
+            "Set Pijama 3 piezas",
+            "Dona",
+            "Cojín E",
+            "Salida de baño",
+            "Cobijita Térmica",
+            "Vestido Tejido"
+        )
+    }
 
     val fabricsList = listOf(
         "Algodón pima",

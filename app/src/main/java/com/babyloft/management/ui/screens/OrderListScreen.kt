@@ -86,6 +86,7 @@ fun OrderListScreen(
                 currentTab = BottomBarTab.PEDIDOS,
                 onNavigateToDashboard = onNavigateToDashboard,
                 onNavigateToOrders = {},
+                onNavigateToCatalog = onNavigateToCatalog,
                 onNavigateToCreate = onNavigateToCreate,
             )
         },
