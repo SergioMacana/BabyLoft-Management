@@ -95,7 +95,7 @@ fun OrderDetailScreen(
                 }
             }
 
-            // Progreso del pedido timeline matching Screenshot 3
+            // Progreso del pedido timeline
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
@@ -116,13 +116,11 @@ fun OrderDetailScreen(
                         TimelineStep(title = "Listo", isActive = currentStatus == OrderStatus.LISTOS, isCompleted = currentStatus == OrderStatus.ENVIADOS)
                         TimelineLine()
                         TimelineStep(title = "Enviado", isActive = currentStatus == OrderStatus.ENVIADOS, isCompleted = false)
-                        TimelineLine()
-                        TimelineStep(title = "Entregado", isActive = false, isCompleted = false)
                     }
                 }
             }
 
-            // Cliente card matching Screenshot 3
+            // Cliente card
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
@@ -136,11 +134,12 @@ fun OrderDetailScreen(
                     Divider(color = Color(0xFFF0F0F0))
                     DetailRow(label = "Instagram", value = order.instagramHandle)
                     DetailRow(label = "Teléfono", value = order.phone)
-                    DetailRow(label = "Fecha pedido", value = order.orderDate)
+                    DetailRow(label = "Día / Fecha entrega", value = order.deliveryDate.ifBlank { "No especificada" })
+                    DetailRow(label = "Fecha registro", value = order.orderDate)
                 }
             }
 
-            // Producto y materiales card matching Screenshot 3
+            // Productos del kit card
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
@@ -149,33 +148,33 @@ fun OrderDetailScreen(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("👗", fontSize = 16.sp)
-                        Text("Producto y materiales", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextDark)
+                        Text("Productos del Kit (${order.items.size})", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextDark)
                     }
                     Divider(color = Color(0xFFF0F0F0))
-                    DetailRow(label = "Producto", value = order.productDescription)
-                    DetailRow(label = "Tela", value = order.fabric)
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Color", color = TextGray, fontSize = 14.sp)
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF80CBC4))
+
+                    order.items.forEachIndexed { idx, item ->
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "${idx + 1}. ${item.productName}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = PinkPrimary
                             )
-                            Text(order.color, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = TextDark)
+                            DetailRow(label = "Tela", value = item.fabric)
+                            DetailRow(label = "Color", value = item.color)
+                            DetailRow(label = "Talla", value = item.size)
+                            if (item.textToEmbroider.isNotBlank()) {
+                                DetailRow(label = "Bordado", value = "\"${item.textToEmbroider}\"")
+                            }
+                            if (idx < order.items.size - 1) {
+                                Divider(color = Color(0xFFF8F8F8), modifier = Modifier.padding(vertical = 4.dp))
+                            }
                         }
                     }
-                    DetailRow(label = "Talla", value = order.size)
                 }
             }
 
-            // Personalización card matching Screenshot 3
+            // Personalización & Notas card
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
@@ -184,12 +183,29 @@ fun OrderDetailScreen(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("✍️", fontSize = 16.sp)
-                        Text("Personalización", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PinkPrimary)
+                        Text("Personalización general", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PinkPrimary)
                     }
                     Divider(color = Color(0xFFF0F0F0))
-                    DetailRow(label = "Nombre/Texto", value = "\"${order.textToEmbroider}\"")
-                    DetailRow(label = "Fuente", value = order.font)
-                    DetailRow(label = "Notas especiales", value = order.notes)
+                    DetailRow(label = "Fuente de bordado", value = order.font)
+                    DetailRow(label = "Notas / Observaciones", value = order.notes.ifBlank { "Ninguna" })
+                }
+            }
+
+            // Resumen financiero card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SoftPinkCard),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("💰", fontSize = 16.sp)
+                        Text("Resumen financiero", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = PinkPrimary)
+                    }
+                    Divider(color = Color(0xFFE0E0E0))
+                    DetailRow(label = "Valor total del kit", value = "$${String.format("%,.0f", order.total)}")
+                    DetailRow(label = "Abono realizado", value = "$${String.format("%,.0f", order.deposit)}")
+                    DetailRow(label = "Pendiente por pagar", value = "$${String.format("%,.0f", order.balance)}")
                 }
             }
 
@@ -203,7 +219,7 @@ fun OrderDetailScreen(
             title = { Text("Cambiar estado del pedido") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OrderStatus.values().forEach { status ->
+                    OrderStatus.entries.forEach { status ->
                         OutlinedButton(
                             onClick = {
                                 currentStatus = status

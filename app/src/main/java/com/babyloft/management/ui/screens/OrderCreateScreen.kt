@@ -11,8 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -26,6 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.babyloft.management.data.Order
+import com.babyloft.management.data.OrderItem
+import com.babyloft.management.data.OrderStatus
+import com.babyloft.management.data.SampleData
 
 // Color Palette
 private val PrimaryPink = Color(0xFFD81B60)
@@ -55,18 +61,27 @@ fun OrderCreateScreen(
     var fullName by remember { mutableStateOf("maria florez") }
     var instagram by remember { mutableStateOf("@ maria_flores") }
     var phone by remember { mutableStateOf("3117394628") }
+    var deliveryDate by remember { mutableStateOf("Lunes 28") }
 
-    // Step 2 State: Product & Materials
-    var selectedProduct by remember { mutableStateOf("Set Pijama 2 piezas") }
-    var selectedFabric by remember { mutableStateOf("Algodón pima") }
-    var selectedColorId by remember { mutableStateOf("amarillo") }
-    var selectedSize by remember { mutableStateOf("9-12 meses") }
+    // Step 2 State: Kit Items (Multi-product support)
+    val kitItems = remember {
+        mutableStateListOf(
+            OrderItem(
+                productName = "Set Pijama 2 piezas",
+                fabric = "Algodón pima",
+                color = "Amarillo",
+                size = "9-12 meses",
+                textToEmbroider = "SOFIA",
+                price = 85000.0
+            )
+        )
+    }
 
-    // Step 3 State: Customization & Price
-    var textToEmbroider by remember { mutableStateOf("SOFIA") }
+    // Step 3 State: Customization, Price & Deposit
     var selectedFont by remember { mutableStateOf("Block redondeado") }
     var specialNotes by remember { mutableStateOf("estrellas y corazones") }
-    var totalPrice by remember { mutableStateOf("$ 85000") }
+    var totalPriceInput by remember { mutableStateOf("85000") }
+    var depositInput by remember { mutableStateOf("40000") }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -152,30 +167,46 @@ fun OrderCreateScreen(
                         onInstagramChange = { instagram = it },
                         phone = phone,
                         onPhoneChange = { phone = it },
+                        deliveryDate = deliveryDate,
+                        onDeliveryDateChange = { deliveryDate = it },
                         onNext = { currentStep = 2 }
                     )
                     2 -> Step2ProductsInfo(
-                        selectedProduct = selectedProduct,
-                        onProductChange = { selectedProduct = it },
-                        selectedFabric = selectedFabric,
-                        onFabricChange = { selectedFabric = it },
-                        selectedColorId = selectedColorId,
-                        onColorChange = { selectedColorId = it },
-                        selectedSize = selectedSize,
-                        onSizeChange = { selectedSize = it },
+                        kitItems = kitItems,
                         onNext = { currentStep = 3 },
                         onBack = { currentStep = 1 }
                     )
                     3 -> Step3CustomizationInfo(
-                        textToEmbroider = textToEmbroider,
-                        onTextToEmbroiderChange = { textToEmbroider = it },
+                        kitItems = kitItems,
                         selectedFont = selectedFont,
                         onFontChange = { selectedFont = it },
                         specialNotes = specialNotes,
                         onSpecialNotesChange = { specialNotes = it },
-                        totalPrice = totalPrice,
-                        onTotalPriceChange = { totalPrice = it },
-                        onConfirm = onOrderCreated,
+                        totalPriceInput = totalPriceInput,
+                        onTotalPriceInputChange = { totalPriceInput = it },
+                        depositInput = depositInput,
+                        onDepositInputChange = { depositInput = it },
+                        fullName = fullName,
+                        onConfirm = {
+                            val totalVal = totalPriceInput.toDoubleOrNull() ?: kitItems.sumOf { it.price }
+                            val depositVal = depositInput.toDoubleOrNull() ?: 0.0
+                            val newOrder = Order(
+                                id = "#BL-${(SampleData.orders.size + 1).toString().padStart(3, '0')}",
+                                customerName = fullName,
+                                phone = phone,
+                                instagramHandle = instagram,
+                                items = kitItems.toList(),
+                                status = OrderStatus.NUEVOS,
+                                total = totalVal,
+                                deposit = depositVal,
+                                deliveryDate = deliveryDate,
+                                notes = specialNotes,
+                                font = selectedFont,
+                                orderDate = "Hoy"
+                            )
+                            SampleData.orders.add(0, newOrder)
+                            onOrderCreated()
+                        },
                         onBack = { currentStep = 2 }
                     )
                 }
@@ -192,6 +223,8 @@ private fun Step1ClientInfo(
     onInstagramChange: (String) -> Unit,
     phone: String,
     onPhoneChange: (String) -> Unit,
+    deliveryDate: String,
+    onDeliveryDateChange: (String) -> Unit,
     onNext: () -> Unit
 ) {
     Column(
@@ -265,6 +298,13 @@ private fun Step1ClientInfo(
             keyboardType = KeyboardType.Phone
         )
 
+        CustomInputField(
+            label = "Fecha / Día de entrega",
+            value = deliveryDate,
+            onValueChange = onDeliveryDateChange,
+            placeholder = "Ej: Lunes 28"
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         GradientButton(
@@ -277,22 +317,18 @@ private fun Step1ClientInfo(
 
 @Composable
 private fun Step2ProductsInfo(
-    selectedProduct: String,
-    onProductChange: (String) -> Unit,
-    selectedFabric: String,
-    onFabricChange: (String) -> Unit,
-    selectedColorId: String,
-    onColorChange: (String) -> Unit,
-    selectedSize: String,
-    onSizeChange: (String) -> Unit,
+    kitItems: MutableList<OrderItem>,
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
     val productsList = listOf(
-        "Set Pijama 2 piezas",
-        "Mameluco Bordado",
-        "Set Pijama 3 piezas",
+        "Cobija",
         "Toalla con Capucha",
+        "Set Pijama 2 piezas",
+        "Set Pijama 3 piezas",
+        "Dona",
+        "Cojín E",
+        "Salida de baño",
         "Cobijita Térmica",
         "Vestido Tejido"
     )
@@ -302,7 +338,8 @@ private fun Step2ProductsInfo(
         "Interlock suave",
         "Tela nido de abeja",
         "Polar corderito",
-        "Lana antialérgica"
+        "Toalla felpa",
+        "Suaventina"
     )
 
     Column(
@@ -332,13 +369,13 @@ private fun Step2ProductsInfo(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Producto y materiales",
+                        text = "Productos del Kit (${kitItems.size})",
                         fontWeight = FontWeight.Bold,
                         color = DarkTealText,
                         fontSize = 15.sp
                     )
                     Text(
-                        text = "Tela, color y talla del pedido",
+                        text = "Agrega uno o varios productos al pedido del cliente",
                         fontSize = 12.sp,
                         color = DarkTealText.copy(alpha = 0.7f)
                     )
@@ -346,33 +383,123 @@ private fun Step2ProductsInfo(
             }
         }
 
-        // Product Dropdown
-        CustomDropdownField(
-            label = "Producto *",
-            selectedValue = selectedProduct,
-            options = productsList,
-            onValueChange = onProductChange
-        )
+        // List of Kit Items
+        kitItems.forEachIndexed { index, item ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, BorderColor)
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Item Header Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Producto #${index + 1}",
+                            fontWeight = FontWeight.Bold,
+                            color = DarkPinkText,
+                            fontSize = 14.sp
+                        )
 
-        // Fabric Dropdown
-        CustomDropdownField(
-            label = "Tipo de tela *",
-            selectedValue = selectedFabric,
-            options = fabricsList,
-            onValueChange = onFabricChange
-        )
+                        if (kitItems.size > 1) {
+                            IconButton(
+                                onClick = { kitItems.removeAt(index) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar producto",
+                                    tint = PrimaryPink,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
 
-        // Color Selector Card
-        ColorSelector(
-            selectedColorId = selectedColorId,
-            onColorSelected = onColorChange
-        )
+                    // Product Selector
+                    CustomDropdownField(
+                        label = "Producto *",
+                        selectedValue = item.productName,
+                        options = productsList,
+                        onValueChange = { selectedName ->
+                            kitItems[index] = item.copy(productName = selectedName)
+                        }
+                    )
 
-        // Size Selector
-        SizeSelector(
-            selectedSize = selectedSize,
-            onSizeSelected = onSizeChange
-        )
+                    // Fabric Selector
+                    CustomDropdownField(
+                        label = "Tipo de tela *",
+                        selectedValue = item.fabric,
+                        options = fabricsList,
+                        onValueChange = { selectedFabric ->
+                            kitItems[index] = item.copy(fabric = selectedFabric)
+                        }
+                    )
+
+                    // Color Selector
+                    ColorSelector(
+                        selectedColorName = item.color,
+                        onColorSelected = { selectedColor ->
+                            kitItems[index] = item.copy(color = selectedColor)
+                        }
+                    )
+
+                    // Size Selector
+                    SizeSelector(
+                        selectedSize = item.size,
+                        onSizeSelected = { selectedSize ->
+                            kitItems[index] = item.copy(size = selectedSize)
+                        }
+                    )
+
+                    // Text to embroider for this specific item
+                    CustomInputField(
+                        label = "Texto / Nombre a bordar en este producto",
+                        value = item.textToEmbroider,
+                        onValueChange = { newText ->
+                            kitItems[index] = item.copy(textToEmbroider = newText)
+                        },
+                        placeholder = "Ej: SOFIA"
+                    )
+                }
+            }
+        }
+
+        // Add Product Button
+        OutlinedButton(
+            onClick = {
+                kitItems.add(
+                    OrderItem(
+                        productName = "Cobija",
+                        fabric = "Algodón pima",
+                        color = "Rosa",
+                        size = "9-12 meses",
+                        textToEmbroider = "",
+                        price = 0.0
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(24.dp),
+            border = BorderStroke(1.5.dp, PrimaryPink),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = PrimaryPink, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "+ Agregar otro producto al kit",
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = PrimaryPink
+            )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -396,31 +523,30 @@ private fun Step2ProductsInfo(
 }
 
 private data class ColorItem(
-    val id: String,
     val name: String,
     val color: Color,
     val statusText: String
 )
 
 private val colorItems = listOf(
-    ColorItem("rosa", "Rosa", Color(0xFFFFB6C1), "Rosa suave"),
-    ColorItem("lavanda", "Lavanda", Color(0xFFC5CAE9), "Lavanda suave"),
-    ColorItem("menta", "Menta", Color(0xFF80E2B7), "Menta suave"),
-    ColorItem("azul", "Azul", Color(0xFFB3E5FC), "Azul suave"),
-    ColorItem("melocoton", "Melocotón", Color(0xFFFFE0B2), "Melocotón suave"),
-    ColorItem("amarillo", "Amarillo", Color(0xFFFFF59D), "Amarillo suave"),
-    ColorItem("lila", "Lila", Color(0xFFE1BEE7), "Lila suave"),
-    ColorItem("blanco", "Blanco", Color(0xFFFFFFFF), "Blanco puro"),
-    ColorItem("coral", "Coral", Color(0xFFFFAB91), "Coral suave"),
-    ColorItem("verde", "Verde", Color(0xFFA5D6A7), "Verde suave")
+    ColorItem("Rosa", Color(0xFFFFB6C1), "Rosa suave"),
+    ColorItem("Lavanda", Color(0xFFC5CAE9), "Lavanda suave"),
+    ColorItem("Menta", Color(0xFF80E2B7), "Menta suave"),
+    ColorItem("Azul", Color(0xFFB3E5FC), "Azul suave"),
+    ColorItem("Melocotón", Color(0xFFFFE0B2), "Melocotón suave"),
+    ColorItem("Amarillo", Color(0xFFFFF59D), "Amarillo suave"),
+    ColorItem("Lila", Color(0xFFE1BEE7), "Lila suave"),
+    ColorItem("Blanco", Color(0xFFFFFFFF), "Blanco puro"),
+    ColorItem("Coral", Color(0xFFFFAB91), "Coral suave"),
+    ColorItem("Verde", Color(0xFFA5D6A7), "Verde suave")
 )
 
 @Composable
 private fun ColorSelector(
-    selectedColorId: String,
+    selectedColorName: String,
     onColorSelected: (String) -> Unit
 ) {
-    val selectedItem = colorItems.find { it.id == selectedColorId } ?: colorItems[5]
+    val selectedItem = colorItems.find { it.name.equals(selectedColorName, ignoreCase = true) } ?: colorItems[5]
 
     Column {
         Text(
@@ -449,8 +575,8 @@ private fun ColorSelector(
                     colorItems.take(5).forEach { item ->
                         ColorCircleItem(
                             item = item,
-                            isSelected = item.id == selectedColorId,
-                            onClick = { onColorSelected(item.id) }
+                            isSelected = item.name.equals(selectedColorName, ignoreCase = true),
+                            onClick = { onColorSelected(item.name) }
                         )
                     }
                 }
@@ -463,8 +589,8 @@ private fun ColorSelector(
                     colorItems.drop(5).take(5).forEach { item ->
                         ColorCircleItem(
                             item = item,
-                            isSelected = item.id == selectedColorId,
-                            onClick = { onColorSelected(item.id) }
+                            isSelected = item.name.equals(selectedColorName, ignoreCase = true),
+                            onClick = { onColorSelected(item.name) }
                         )
                     }
                 }
@@ -552,7 +678,7 @@ private fun SizeSelector(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     rowSizes.forEach { size ->
-                        val isSelected = size == selectedSize
+                        val isSelected = size.equals(selectedSize, ignoreCase = true)
                         Surface(
                             onClick = { onSizeSelected(size) },
                             modifier = Modifier.weight(1f),
@@ -584,14 +710,16 @@ private fun SizeSelector(
 
 @Composable
 private fun Step3CustomizationInfo(
-    textToEmbroider: String,
-    onTextToEmbroiderChange: (String) -> Unit,
+    kitItems: List<OrderItem>,
     selectedFont: String,
     onFontChange: (String) -> Unit,
     specialNotes: String,
     onSpecialNotesChange: (String) -> Unit,
-    totalPrice: String,
-    onTotalPriceChange: (String) -> Unit,
+    totalPriceInput: String,
+    onTotalPriceInputChange: (String) -> Unit,
+    depositInput: String,
+    onDepositInputChange: (String) -> Unit,
+    fullName: String,
     onConfirm: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -602,6 +730,10 @@ private fun Step3CustomizationInfo(
         "Serif clásico",
         "Monoline"
     )
+
+    val totalVal = totalPriceInput.toDoubleOrNull() ?: 0.0
+    val depositVal = depositInput.toDoubleOrNull() ?: 0.0
+    val balanceVal = (totalVal - depositVal).coerceAtLeast(0.0)
 
     Column(
         modifier = Modifier
@@ -636,21 +768,13 @@ private fun Step3CustomizationInfo(
                         fontSize = 15.sp
                     )
                     Text(
-                        text = "Nombre a bordar, fuente y detalles especiales",
+                        text = "Fuente de bordado, notas, total y abono",
                         fontSize = 12.sp,
                         color = DarkPurpleText.copy(alpha = 0.7f)
                     )
                 }
             }
         }
-
-        // Text to embroider
-        CustomInputField(
-            label = "Nombre / texto a bordar",
-            value = textToEmbroider,
-            onValueChange = onTextToEmbroiderChange,
-            placeholder = "SOFIA"
-        )
 
         // Font options list
         Column {
@@ -706,7 +830,7 @@ private fun Step3CustomizationInfo(
         // Special notes
         Column {
             Text(
-                text = "Notas especiales",
+                text = "Notas especiales / Observaciones",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DarkPinkText,
@@ -732,10 +856,19 @@ private fun Step3CustomizationInfo(
 
         // Total price
         CustomInputField(
-            label = "Valor total (COP) *",
-            value = totalPrice,
-            onValueChange = onTotalPriceChange,
-            placeholder = "$ 85000",
+            label = "Valor total del kit (COP) *",
+            value = totalPriceInput,
+            onValueChange = onTotalPriceInputChange,
+            placeholder = "85000",
+            keyboardType = KeyboardType.Number
+        )
+
+        // Deposit price
+        CustomInputField(
+            label = "Abono del cliente (COP)",
+            value = depositInput,
+            onValueChange = onDepositInputChange,
+            placeholder = "40000",
             keyboardType = KeyboardType.Number
         )
 
@@ -746,18 +879,76 @@ private fun Step3CustomizationInfo(
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(1.dp, BorderColor)
         ) {
-            Row(
-                modifier = Modifier.padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(text = "📋", fontSize = 16.sp)
-                Spacer(modifier = Modifier.width(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "📋", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Resumen del pedido - $fullName",
+                        fontWeight = FontWeight.Bold,
+                        color = DarkPinkText,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Divider(color = BorderColor.copy(alpha = 0.5f))
+
                 Text(
-                    text = "Resumen del pedido",
+                    text = "Productos en el kit (${kitItems.size}):",
                     fontWeight = FontWeight.Bold,
-                    color = DarkPinkText,
-                    fontSize = 14.sp
+                    fontSize = 12.sp,
+                    color = DarkPinkText
                 )
+
+                kitItems.forEach { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "• ${item.productName} (${item.color}, ${item.fabric})",
+                            fontSize = 12.sp,
+                            color = SubtitleGray
+                        )
+                        if (item.textToEmbroider.isNotBlank()) {
+                            Text(
+                                text = "\"${item.textToEmbroider}\"",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkPinkText
+                            )
+                        }
+                    }
+                }
+
+                Divider(color = BorderColor.copy(alpha = 0.5f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Valor total:", fontSize = 13.sp, color = DarkPinkText)
+                    Text("$${String.format("%,.0f", totalVal)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = DarkPinkText)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Abono:", fontSize = 13.sp, color = DarkPinkText)
+                    Text("$${String.format("%,.0f", depositVal)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Pendiente por pagar:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryPink)
+                    Text("$${String.format("%,.0f", balanceVal)}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PrimaryPink)
+                }
             }
         }
 
