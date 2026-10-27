@@ -1,10 +1,10 @@
 # Ideas de proyecto
 
 ## Idea 1
-# babyloft
+### Babyloft Management
 Aplicación móvil de gestión de pedidos y seguimiento de producción diseñada para negocios de manufactura, o gestion de prendas. Permite administrar el ciclo de vida completo de una orden: registro de clientes, selección detallada de materiales, especificaciones de personalización y actualización de estados logísticos (nuevo, en producción, listo, enviado). Incluye un panel de métricas en tiempo real y un flujo de creación estructurado en pasos para agilizar las ventas directas.
 
-Aplicaciones similares:
+#### Aplicaciones similares:
 
 - Etsy Seller: El estándar de la industria para gestionar encargos de productos hechos a mano, con un fuerte enfoque en la comunicación con el cliente y el estado del envío.
   
@@ -13,10 +13,10 @@ Aplicaciones similares:
 - Kyte / Loyverse POS: Aplicaciones de punto de venta móvil que destacan por su diseño limpio para catálogos, gestión de clientes y seguimiento rápido de ventas desde el teléfono.
 
 ## Idea 2
-# Sugar Suite
+### Sugar Suite
 Una aplicación móvil enfocada en administrar encargos de pasteles de autor y mesas dulces. Este proyecto utiliza una arquitectura similar a tu app de ropa de bebé, pero introduce nuevas variables técnicas y de negocio.
 
-Aplicaciones similares:
+#### Aplicaciones similares:
 
 - BakeGenie: Una plataforma integral construida para decoradores de pasteles y negocios de repostería.
   
