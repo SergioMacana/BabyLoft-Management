@@ -1,5 +1,6 @@
 package com.babyloft.management.ui.screens
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -33,27 +35,36 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.babyloft.management.data.ProductItem
 import com.babyloft.management.data.SampleData
+import com.babyloft.management.data.repository.ProductRepository
 import com.babyloft.management.ui.components.BabyLoftBottomBar
 import com.babyloft.management.ui.components.BottomBarTab
 import com.babyloft.management.ui.theme.*
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductCatalogScreen(
+    productRepository: ProductRepository? = null,
     onBack: () -> Unit,
     onNavigateToDashboard: () -> Unit,
     onNavigateToOrders: () -> Unit,
-    onNavigateToCreate: () -> Unit
+    onNavigateToCreate: () -> Unit,
+    onNavigateToMaterials: () -> Unit = {}
 ) {
-    val products = SampleData.products
+    val roomProducts by (productRepository?.activeProducts?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<ProductItem>>(emptyList()) })
+    val products = if (productRepository != null) roomProducts else SampleData.products
+
     var editingProduct by remember { mutableStateOf<ProductItem?>(null) }
     var isCreatingNew by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Catálogo y Productos 🐰", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                title = { Text("Catálogo 🐰", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -61,15 +72,25 @@ fun ProductCatalogScreen(
                 },
                 actions = {
                     Button(
+                        onClick = onNavigateToMaterials,
+                        colors = ButtonDefaults.buttonColors(containerColor = SoftPinkCard, contentColor = PinkPrimary),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Text("🧵 Opciones", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
                         onClick = { isCreatingNew = true },
                         colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
                         shape = RoundedCornerShape(20.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        modifier = Modifier.padding(end = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 6.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Producto", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text("Producto", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundCream)
@@ -113,7 +134,15 @@ fun ProductCatalogScreen(
                 CatalogItemCard(
                     product = product,
                     onEdit = { editingProduct = product },
-                    onDelete = { products.remove(product) }
+                    onDelete = {
+                        if (productRepository != null) {
+                            scope.launch {
+                                productRepository.deleteProduct(product)
+                            }
+                        } else {
+                            SampleData.products.remove(product)
+                        }
+                    }
                 )
             }
 
@@ -130,9 +159,15 @@ fun ProductCatalogScreen(
             isNew = false,
             onDismiss = { editingProduct = null },
             onSave = { updatedProduct ->
-                val index = products.indexOfFirst { it.id == updatedProduct.id }
-                if (index != -1) {
-                    products[index] = updatedProduct
+                if (productRepository != null) {
+                    scope.launch {
+                        productRepository.updateProduct(updatedProduct)
+                    }
+                } else {
+                    val index = SampleData.products.indexOfFirst { it.id == updatedProduct.id }
+                    if (index != -1) {
+                        SampleData.products[index] = updatedProduct
+                    }
                 }
                 editingProduct = null
             }
@@ -153,7 +188,13 @@ fun ProductCatalogScreen(
             isNew = true,
             onDismiss = { isCreatingNew = false },
             onSave = { newProduct ->
-                products.add(0, newProduct)
+                if (productRepository != null) {
+                    scope.launch {
+                        productRepository.addProduct(newProduct)
+                    }
+                } else {
+                    SampleData.products.add(0, newProduct)
+                }
                 isCreatingNew = false
             }
         )
@@ -292,13 +333,17 @@ fun ProductEditDialog(
     var category by remember { mutableStateOf(product.category) }
     var imageEmoji by remember { mutableStateOf(product.imageEmoji) }
     var selectedImageUri by remember { mutableStateOf(product.imageUri) }
+    val context = LocalContext.current
 
     // System Image Picker launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            selectedImageUri = uri.toString()
+            val savedPath = saveImageToInternalStorage(context, uri)
+            if (savedPath != null) {
+                selectedImageUri = savedPath
+            }
         }
     }
 
@@ -461,4 +506,19 @@ fun ProductEditDialog(
             }
         }
     )
+}
+
+fun saveImageToInternalStorage(context: Context, uri: Uri): String? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val imagesDir = File(context.filesDir, "product_images").apply { if (!exists()) mkdirs() }
+        val imageFile = File(imagesDir, "img_${System.currentTimeMillis()}.jpg")
+        FileOutputStream(imageFile).use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+        Uri.fromFile(imageFile).toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }

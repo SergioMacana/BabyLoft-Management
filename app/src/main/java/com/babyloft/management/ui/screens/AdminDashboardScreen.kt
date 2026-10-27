@@ -10,6 +10,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +28,7 @@ import com.babyloft.management.R
 import com.babyloft.management.data.Order
 import com.babyloft.management.data.OrderStatus
 import com.babyloft.management.data.SampleData
+import com.babyloft.management.data.repository.OrderRepository
 import com.babyloft.management.ui.components.BabyLoftBottomBar
 import com.babyloft.management.ui.components.BottomBarTab
 import com.babyloft.management.ui.components.OrderStatusBadge
@@ -32,12 +37,20 @@ import com.babyloft.management.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
+    orderRepository: OrderRepository? = null,
     onNavigateToOrders: () -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToDetail: (Order) -> Unit,
     onNavigateToCatalog: () -> Unit
 ) {
-    val orders = SampleData.orders
+    val roomOrders by (orderRepository?.allOrders?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<Order>>(emptyList()) })
+
+    val orders = if (orderRepository != null) roomOrders else SampleData.orders
+    
+    // Filter out ENVIADOS (archived) from recent orders
+    val activeOrders = orders.filter { it.status != OrderStatus.ENVIADOS }
+    val displayRecent = activeOrders.take(3)
+
     val nuevosCount = orders.count { it.status == OrderStatus.NUEVOS }
     val prodCount = orders.count { it.status == OrderStatus.EN_PRODUCCION }
     val listosCount = orders.count { it.status == OrderStatus.LISTOS }
@@ -195,8 +208,31 @@ fun AdminDashboardScreen(
                 }
             }
 
-            items(orders.take(2)) { order ->
-                RecentOrderCard(order = order, onClick = { onNavigateToDetail(order) })
+            if (displayRecent.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("🎉", fontSize = 32.sp)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("¡Estás al día!", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
+                            Text("No hay pedidos recientes pendientes", fontSize = 13.sp, color = TextGray)
+                        }
+                    }
+                }
+            } else {
+                items(displayRecent) { order ->
+                    RecentOrderCard(order = order, onClick = { onNavigateToDetail(order) })
+                }
             }
 
             item {

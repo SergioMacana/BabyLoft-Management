@@ -41,9 +41,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.collectAsState
 import com.babyloft.management.data.Order
 import com.babyloft.management.data.OrderStatus
 import com.babyloft.management.data.SampleData
+import com.babyloft.management.data.repository.OrderRepository
 import com.babyloft.management.ui.components.BabyLoftBottomBar
 import com.babyloft.management.ui.components.BottomBarTab
 import com.babyloft.management.ui.components.OrderStatusBadge
@@ -55,15 +57,21 @@ import com.babyloft.management.ui.theme.TextGray
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun OrderListScreen(
+    orderRepository: OrderRepository? = null,
     onBack: () -> Unit,
     onNavigateToDetail: (Order) -> Unit,
     onNavigateToDashboard: () -> Unit,
     onNavigateToCatalog: () -> Unit,
     onNavigateToCreate: () -> Unit,
+    onNavigateToArchived: () -> Unit = {},
 ) {
     var selectedFilter by remember { mutableStateOf<OrderStatus?>(null) }
-    val orders = SampleData.orders
-    val filteredOrders = if (selectedFilter == null) orders else orders.filter { it.status == selectedFilter }
+    val roomOrders by (orderRepository?.allOrders?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<Order>>(emptyList()) })
+    val orders = if (orderRepository != null) roomOrders else SampleData.orders
+
+    // Exclude ENVIADOS from active orders list
+    val activeOrders = orders.filter { it.status != OrderStatus.ENVIADOS }
+    val filteredOrders = if (selectedFilter == null) activeOrders else activeOrders.filter { it.status == selectedFilter }
 
     Scaffold(
         topBar = {
@@ -122,18 +130,27 @@ fun OrderListScreen(
                             onClick = { selectedFilter = null },
                         )
                     }
-                    items(OrderStatus.entries.toTypedArray()) { status ->
+                    val activeStatuses = arrayOf(OrderStatus.NUEVOS, OrderStatus.EN_PRODUCCION, OrderStatus.LISTOS)
+                    items(activeStatuses) { status ->
                         val (emoji, label) = when (status) {
                             OrderStatus.NUEVOS -> Pair("✨", "Nuevo")
                             OrderStatus.EN_PRODUCCION -> Pair("🧵", "En Producción")
                             OrderStatus.LISTOS -> Pair("✅", "Listo")
-                            OrderStatus.ENVIADOS -> Pair("📦", "Enviado")
+                            else -> Pair("📦", "Enviado")
                         }
                         OrderFilterChip(
                             selected = selectedFilter == status,
                             emoji = emoji,
                             label = label,
                             onClick = { selectedFilter = status },
+                        )
+                    }
+                    item {
+                        OrderFilterChip(
+                            selected = false,
+                            emoji = "📁",
+                            label = "Archivados",
+                            onClick = onNavigateToArchived,
                         )
                     }
                 }

@@ -3,6 +3,7 @@ package com.babyloft.management
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -11,7 +12,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.babyloft.management.data.SampleData
+import com.babyloft.management.data.local.BabyLoftDatabase
+import com.babyloft.management.data.local.DatabaseSeeder
+import com.babyloft.management.data.repository.AttributeRepository
+import com.babyloft.management.data.repository.OrderRepository
+import com.babyloft.management.data.repository.ProductRepository
 import com.babyloft.management.ui.screens.AdminDashboardScreen
+import com.babyloft.management.ui.screens.ArchivedOrdersScreen
+import com.babyloft.management.ui.screens.ManageMaterialsScreen
 import com.babyloft.management.ui.screens.OrderCreateScreen
 import com.babyloft.management.ui.screens.OrderDetailScreen
 import com.babyloft.management.ui.screens.OrderListScreen
@@ -24,8 +32,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-
             BabyLoftManagementTheme {
+                val database = remember { BabyLoftDatabase.getDatabase(applicationContext) }
+                val orderRepository = remember { OrderRepository(database) }
+                val productRepository = remember { ProductRepository(database) }
+                val attributeRepository = remember { AttributeRepository(database) }
+
+                LaunchedEffect(Unit) {
+                    DatabaseSeeder.seedIfEmpty(database)
+                }
 
                 val navController = rememberNavController()
 
@@ -43,24 +58,18 @@ class MainActivity : ComponentActivity() {
                     // ==========================================
 
                     composable("dashboard") {
-
                         AdminDashboardScreen(
-
+                            orderRepository = orderRepository,
                             onNavigateToOrders = {
                                 navController.navigate("orders")
                             },
-
                             onNavigateToCreate = {
                                 navController.navigate("create")
                             },
-
                             onNavigateToDetail = { order ->
-
                                 selectedOrder = order
-
                                 navController.navigate("detail")
                             },
-
                             onNavigateToCatalog = {
                                 navController.navigate("catalog")
                             }
@@ -72,36 +81,30 @@ class MainActivity : ComponentActivity() {
                     // ==========================================
 
                     composable("orders") {
-
                         OrderListScreen(
-
+                            orderRepository = orderRepository,
                             onBack = {
                                 navController.popBackStack()
                             },
-
                             onNavigateToDetail = { order ->
-
                                 selectedOrder = order
-
                                 navController.navigate("detail")
                             },
-
                             onNavigateToDashboard = {
-
                                 navController.navigate("dashboard") {
-
                                     popUpTo("dashboard") {
                                         inclusive = true
                                     }
                                 }
                             },
-
                             onNavigateToCatalog = {
                                 navController.navigate("catalog")
                             },
-
                             onNavigateToCreate = {
                                 navController.navigate("create")
+                            },
+                            onNavigateToArchived = {
+                                navController.navigate("archived")
                             }
                         )
                     }
@@ -111,29 +114,39 @@ class MainActivity : ComponentActivity() {
                     // ==========================================
 
                     composable("catalog") {
-
                         ProductCatalogScreen(
-
+                            productRepository = productRepository,
                             onBack = {
                                 navController.popBackStack()
                             },
-
                             onNavigateToDashboard = {
-
                                 navController.navigate("dashboard") {
-
                                     popUpTo("dashboard") {
                                         inclusive = true
                                     }
                                 }
                             },
-
                             onNavigateToOrders = {
                                 navController.navigate("orders")
                             },
-
                             onNavigateToCreate = {
                                 navController.navigate("create")
+                            },
+                            onNavigateToMaterials = {
+                                navController.navigate("materials")
+                            }
+                        )
+                    }
+
+                    // ==========================================
+                    // MATERIALES / TELAS / COLORES / TALLAS
+                    // ==========================================
+
+                    composable("materials") {
+                        ManageMaterialsScreen(
+                            attributeRepository = attributeRepository,
+                            onBack = {
+                                navController.popBackStack()
                             }
                         )
                     }
@@ -143,11 +156,9 @@ class MainActivity : ComponentActivity() {
                     // ==========================================
 
                     composable("detail") {
-
                         OrderDetailScreen(
-
                             order = selectedOrder,
-
+                            orderRepository = orderRepository,
                             onBack = {
                                 navController.popBackStack()
                             }
@@ -160,6 +171,9 @@ class MainActivity : ComponentActivity() {
 
                     composable("create") {
                         OrderCreateScreen(
+                            orderRepository = orderRepository,
+                            productRepository = productRepository,
+                            attributeRepository = attributeRepository,
                             onNavigateBack = {
                                 navController.popBackStack()
                             },
@@ -167,6 +181,23 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("orders") {
                                     popUpTo("dashboard")
                                 }
+                            }
+                        )
+                    }
+
+                    // ==========================================
+                    // PEDIDOS ARCHIVADOS
+                    // ==========================================
+
+                    composable("archived") {
+                        ArchivedOrdersScreen(
+                            orderRepository = orderRepository,
+                            onBack = {
+                                navController.popBackStack()
+                            },
+                            onNavigateToDetail = { order ->
+                                selectedOrder = order
+                                navController.navigate("detail")
                             }
                         )
                     }

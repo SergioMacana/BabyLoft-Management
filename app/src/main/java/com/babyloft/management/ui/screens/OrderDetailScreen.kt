@@ -19,17 +19,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babyloft.management.data.Order
 import com.babyloft.management.data.OrderStatus
+import com.babyloft.management.data.repository.OrderRepository
 import com.babyloft.management.ui.components.OrderStatusBadge
 import com.babyloft.management.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderDetailScreen(
     order: Order,
+    orderRepository: OrderRepository? = null,
     onBack: () -> Unit
 ) {
     var currentStatus by remember { mutableStateOf(order.status) }
     var showChangeDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -224,6 +228,11 @@ fun OrderDetailScreen(
                             onClick = {
                                 currentStatus = status
                                 showChangeDialog = false
+                                if (orderRepository != null) {
+                                    scope.launch {
+                                        orderRepository.updateOrderStatus(order.id, status)
+                                    }
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(

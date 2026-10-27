@@ -31,7 +31,13 @@ import androidx.compose.ui.unit.sp
 import com.babyloft.management.data.Order
 import com.babyloft.management.data.OrderItem
 import com.babyloft.management.data.OrderStatus
+import com.babyloft.management.data.ProductItem
 import com.babyloft.management.data.SampleData
+import com.babyloft.management.data.local.entity.AttributeEntity
+import com.babyloft.management.data.repository.AttributeRepository
+import com.babyloft.management.data.repository.OrderRepository
+import com.babyloft.management.data.repository.ProductRepository
+import kotlinx.coroutines.launch
 
 // Color Palette
 private val PrimaryPink = Color(0xFFD81B60)
@@ -52,6 +58,9 @@ private val ScreenBackground = Color(0xFFFDF7FA)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderCreateScreen(
+    orderRepository: OrderRepository? = null,
+    productRepository: ProductRepository? = null,
+    attributeRepository: AttributeRepository? = null,
     onNavigateBack: () -> Unit = {},
     onOrderCreated: () -> Unit = {}
 ) {
@@ -63,7 +72,7 @@ fun OrderCreateScreen(
     var phone by remember { mutableStateOf("3117394628") }
     var deliveryDate by remember { mutableStateOf("Lunes 28") }
 
-    // Step 2 State: Kit Items (Multi-product support)
+    // Step 2 State: Kit Items
     val kitItems = remember {
         mutableStateListOf(
             OrderItem(
@@ -82,6 +91,9 @@ fun OrderCreateScreen(
     var specialNotes by remember { mutableStateOf("estrellas y corazones") }
     var totalPriceInput by remember { mutableStateOf("85000") }
     var depositInput by remember { mutableStateOf("40000") }
+
+    val scope = rememberCoroutineScope()
+    var isSaving by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -173,6 +185,8 @@ fun OrderCreateScreen(
                     )
                     2 -> Step2ProductsInfo(
                         kitItems = kitItems,
+                        productRepository = productRepository,
+                        attributeRepository = attributeRepository,
                         onNext = { currentStep = 3 },
                         onBack = { currentStep = 1 }
                     )
@@ -187,25 +201,50 @@ fun OrderCreateScreen(
                         depositInput = depositInput,
                         onDepositInputChange = { depositInput = it },
                         fullName = fullName,
+                        isSaving = isSaving,
                         onConfirm = {
                             val totalVal = totalPriceInput.toDoubleOrNull() ?: kitItems.sumOf { it.price }
                             val depositVal = depositInput.toDoubleOrNull() ?: 0.0
-                            val newOrder = Order(
-                                id = "#BL-${(SampleData.orders.size + 1).toString().padStart(3, '0')}",
-                                customerName = fullName,
-                                phone = phone,
-                                instagramHandle = instagram,
-                                items = kitItems.toList(),
-                                status = OrderStatus.NUEVOS,
-                                total = totalVal,
-                                deposit = depositVal,
-                                deliveryDate = deliveryDate,
-                                notes = specialNotes,
-                                font = selectedFont,
-                                orderDate = "Hoy"
-                            )
-                            SampleData.orders.add(0, newOrder)
-                            onOrderCreated()
+
+                            if (orderRepository != null) {
+                                isSaving = true
+                                scope.launch {
+                                    try {
+                                        orderRepository.createOrder(
+                                            customerName = fullName,
+                                            phone = phone,
+                                            instagramHandle = instagram,
+                                            items = kitItems.toList(),
+                                            total = totalVal,
+                                            deposit = depositVal,
+                                            deliveryDate = deliveryDate,
+                                            notes = specialNotes,
+                                            embroideryFont = selectedFont
+                                        )
+                                        isSaving = false
+                                        onOrderCreated()
+                                    } catch (e: Exception) {
+                                        isSaving = false
+                                    }
+                                }
+                            } else {
+                                val newOrder = Order(
+                                    id = "#BL-${(SampleData.orders.size + 1).toString().padStart(3, '0')}",
+                                    customerName = fullName,
+                                    phone = phone,
+                                    instagramHandle = instagram,
+                                    items = kitItems.toList(),
+                                    status = OrderStatus.NUEVOS,
+                                    total = totalVal,
+                                    deposit = depositVal,
+                                    deliveryDate = deliveryDate,
+                                    notes = specialNotes,
+                                    font = selectedFont,
+                                    orderDate = "Hoy"
+                                )
+                                SampleData.orders.add(0, newOrder)
+                                onOrderCreated()
+                            }
                         },
                         onBack = { currentStep = 2 }
                     )
@@ -318,10 +357,19 @@ private fun Step1ClientInfo(
 @Composable
 private fun Step2ProductsInfo(
     kitItems: MutableList<OrderItem>,
+    productRepository: ProductRepository? = null,
+    attributeRepository: AttributeRepository? = null,
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
-    val productsList = SampleData.products.map { it.name }.ifEmpty {
+    val roomProducts by (productRepository?.activeProducts?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<ProductItem>>(emptyList()) })
+    val roomFabrics by (attributeRepository?.fabrics?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<AttributeEntity>>(emptyList()) })
+    val roomColors by (attributeRepository?.colors?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<AttributeEntity>>(emptyList()) })
+    val roomSizes by (attributeRepository?.sizes?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf<List<AttributeEntity>>(emptyList()) })
+
+    val productsList = if (productRepository != null && roomProducts.isNotEmpty()) {
+        roomProducts.map { it.name }
+    } else {
         listOf(
             "Cobija",
             "Toalla con Capucha",
@@ -335,14 +383,24 @@ private fun Step2ProductsInfo(
         )
     }
 
-    val fabricsList = listOf(
-        "Algodón pima",
-        "Interlock suave",
-        "Tela nido de abeja",
-        "Polar corderito",
-        "Toalla felpa",
-        "Suaventina"
-    )
+    val fabricsList = if (attributeRepository != null && roomFabrics.isNotEmpty()) {
+        roomFabrics.map { it.name }
+    } else {
+        listOf(
+            "Algodón pima",
+            "Interlock suave",
+            "Tela nido de abeja",
+            "Polar corderito",
+            "Toalla felpa",
+            "Suaventina"
+        )
+    }
+
+    val customColorItems = if (attributeRepository != null && roomColors.isNotEmpty()) {
+        roomColors.map {
+            ColorItem(it.name, parseHexColor(it.hexColor), "${it.name} suave")
+        }
+    } else colorItems
 
     Column(
         modifier = Modifier
@@ -448,6 +506,7 @@ private fun Step2ProductsInfo(
                     // Color Selector
                     ColorSelector(
                         selectedColorName = item.color,
+                        colorOptionsList = customColorItems,
                         onColorSelected = { selectedColor ->
                             kitItems[index] = item.copy(color = selectedColor)
                         }
@@ -456,6 +515,7 @@ private fun Step2ProductsInfo(
                     // Size Selector
                     SizeSelector(
                         selectedSize = item.size,
+                        customSizesList = if (attributeRepository != null && roomSizes.isNotEmpty()) roomSizes.map { it.name } else null,
                         onSizeSelected = { selectedSize ->
                             kitItems[index] = item.copy(size = selectedSize)
                         }
@@ -479,9 +539,9 @@ private fun Step2ProductsInfo(
             onClick = {
                 kitItems.add(
                     OrderItem(
-                        productName = "Cobija",
-                        fabric = "Algodón pima",
-                        color = "Rosa",
+                        productName = if (productsList.isNotEmpty()) productsList.first() else "Cobija",
+                        fabric = if (fabricsList.isNotEmpty()) fabricsList.first() else "Algodón pima",
+                        color = if (customColorItems.isNotEmpty()) customColorItems.first().name else "Rosa",
                         size = "9-12 meses",
                         textToEmbroider = "",
                         price = 0.0
@@ -546,9 +606,11 @@ private val colorItems = listOf(
 @Composable
 private fun ColorSelector(
     selectedColorName: String,
+    colorOptionsList: List<ColorItem> = colorItems,
     onColorSelected: (String) -> Unit
 ) {
-    val selectedItem = colorItems.find { it.name.equals(selectedColorName, ignoreCase = true) } ?: colorItems[5]
+    val itemsToUse = if (colorOptionsList.isNotEmpty()) colorOptionsList else colorItems
+    val selectedItem = itemsToUse.find { it.name.equals(selectedColorName, ignoreCase = true) } ?: itemsToUse.first()
 
     Column {
         Text(
@@ -569,31 +631,18 @@ private fun ColorSelector(
                 modifier = Modifier.padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Row 1 (5 colors)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    colorItems.take(5).forEach { item ->
-                        ColorCircleItem(
-                            item = item,
-                            isSelected = item.name.equals(selectedColorName, ignoreCase = true),
-                            onClick = { onColorSelected(item.name) }
-                        )
-                    }
-                }
-
-                // Row 2 (5 colors)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    colorItems.drop(5).take(5).forEach { item ->
-                        ColorCircleItem(
-                            item = item,
-                            isSelected = item.name.equals(selectedColorName, ignoreCase = true),
-                            onClick = { onColorSelected(item.name) }
-                        )
+                itemsToUse.chunked(5).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        rowItems.forEach { item ->
+                            ColorCircleItem(
+                                item = item,
+                                isSelected = item.name.equals(selectedColorName, ignoreCase = true),
+                                onClick = { onColorSelected(item.name) }
+                            )
+                        }
                     }
                 }
             }
@@ -656,13 +705,18 @@ private fun ColorCircleItem(
 @Composable
 private fun SizeSelector(
     selectedSize: String,
+    customSizesList: List<String>? = null,
     onSizeSelected: (String) -> Unit
 ) {
-    val sizes = listOf(
-        listOf("Recién nacido", "0-3 meses", "3-6 meses"),
-        listOf("6-9 meses", "9-12 meses", "12 meses"),
-        listOf("18 meses", "24 meses", "Única")
-    )
+    val sizes = if (!customSizesList.isNullOrEmpty()) {
+        customSizesList.chunked(3)
+    } else {
+        listOf(
+            listOf("Recién nacido", "0-3 meses", "3-6 meses"),
+            listOf("6-9 meses", "9-12 meses", "12 meses"),
+            listOf("18 meses", "24 meses", "Única")
+        )
+    }
 
     Column {
         Text(
@@ -722,6 +776,7 @@ private fun Step3CustomizationInfo(
     depositInput: String,
     onDepositInputChange: (String) -> Unit,
     fullName: String,
+    isSaving: Boolean,
     onConfirm: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -967,8 +1022,9 @@ private fun Step3CustomizationInfo(
                 modifier = Modifier.weight(1f)
             )
             GradientButton(
-                text = "Crear Pedido 🚀",
+                text = if (isSaving) "Guardando..." else "Crear Pedido 🚀",
                 onClick = onConfirm,
+                enabled = !isSaving,
                 modifier = Modifier.weight(1f)
             )
         }
